@@ -7,6 +7,60 @@
 
 int sudoku[9][9];   // matriz global del sudoku
 
+int validate_line(int index, int check_rows)
+{
+    int seen[10] = {0};
+
+    for (int i = 0; i < 9; i++)
+    {
+        int value;
+
+        if (check_rows)
+        {
+            value = sudoku[index][i];
+        }
+        else
+        {
+            value = sudoku[i][index];
+        }
+
+        if (value < 1 || value > 9 || seen[value])
+        {
+            return 0;
+        }
+
+        seen[value] = 1;
+    }
+
+    return 1;
+}
+
+int validate_rows()
+{
+    for (int i = 0; i < 9; i++)
+    {
+        if (!validate_line(i, 1))
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+int validate_columns()
+{
+    for (int i = 0; i < 9; i++)
+    {
+        if (!validate_line(i, 0))
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -55,6 +109,24 @@ int main(int argc, char *argv[])
             printf("%d ", sudoku[i][j]);
         }
         printf("\n");
+    }
+
+    if (validate_rows())
+    {
+        printf("\nFilas válidas\n");
+    }
+    else
+    {
+        printf("\nError en filas\n");
+    }
+
+    if (validate_columns())
+    {
+        printf("Columnas válidas\n");
+    }
+    else
+    {
+        printf("Error en columnas\n");
     }
 
     return 0;
