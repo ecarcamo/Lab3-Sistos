@@ -77,7 +77,9 @@ void* column_thread(void* arg)
 
 int main(int argc, char *argv[])
 {
+    omp_set_nested(true);
     // omp_set_num_threads(1);
+    
     if (argc != 2)
     {
         printf("Uso: %s <archivo_sudoku>\n", argv[0]);
