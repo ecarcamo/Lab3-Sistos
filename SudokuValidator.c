@@ -77,7 +77,7 @@ void* column_thread(void* arg)
 
 int main(int argc, char *argv[])
 {
-    omp_set_num_threads(1);
+    // omp_set_num_threads(1);
     if (argc != 2)
     {
         printf("Uso: %s <archivo_sudoku>\n", argv[0]);
@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    omp_set_num_threads(9);
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < 81; i++)
     {
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
     if (!validate_columns())
         sudoku_valid = 0;
 
+    omp_set_num_threads(9);
     #pragma omp parallel for collapse(2) schedule(dynamic)
     for (int r = 0; r < 9; r += 3)
         for (int c = 0; c < 9; c += 3)
