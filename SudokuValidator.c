@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include <sys/syscall.h>
+#include <omp.h>
 
 int sudoku[9][9];
 
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    #pragma omp parallel for
     for (int i = 0; i < 81; i++)
     {
         int row = i / 9;
@@ -111,6 +113,7 @@ int main(int argc, char *argv[])
     if (!validate_columns())
         sudoku_valid = 0;
 
+    #pragma omp parallel for collapse(2)
     for (int r = 0; r < 9; r += 3)
         for (int c = 0; c < 9; c += 3)
             if (!validate_subgrid(r, c))
