@@ -38,5 +38,24 @@ int main(int argc, char *argv[])
 
     printf("Archivo mapeado en memoria\n");
 
+    for (int i = 0; i < 81; i++)
+    {
+        int row = i / 9;
+        int col = i % 9;
+
+        sudoku[row][col] = map[i] - '0';
+    }
+
+    printf("\nSudoku cargado:\n");
+
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            printf("%d ", sudoku[i][j]);
+        }
+        printf("\n");
+    }
+
     return 0;
 }
