@@ -61,6 +61,28 @@ int validate_columns()
     return 1;
 }
 
+int validate_subgrid(int start_row, int start_col)
+{
+    int seen[10] = {0};
+
+    for (int row = start_row; row < start_row + 3; row++)
+    {
+        for (int col = start_col; col < start_col + 3; col++)
+        {
+            int value = sudoku[row][col];
+
+            if (value < 1 || value > 9 || seen[value])
+            {
+                return 0;
+            }
+
+            seen[value] = 1;
+        }
+    }
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -127,6 +149,28 @@ int main(int argc, char *argv[])
     else
     {
         printf("Error en columnas\n");
+    }
+
+    int subgrid_valid = 1;
+
+    for (int row = 0; row < 9; row += 3)
+    {
+        for (int col = 0; col < 9; col += 3)
+        {
+            if (!validate_subgrid(row, col))
+            {
+                subgrid_valid = 0;
+            }
+        }
+    }
+
+    if (subgrid_valid)
+    {
+        printf("Subcuadros válidos\n");
+    }
+    else
+    {
+        printf("Error en subcuadros\n");
     }
 
     return 0;
