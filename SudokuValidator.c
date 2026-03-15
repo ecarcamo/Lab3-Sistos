@@ -5,8 +5,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <pthread.h>
+#include <sys/syscall.h>
 
-int sudoku[9][9];   // matriz global del sudoku
+int sudoku[9][9];
 
 int validate_line(int index, int check_rows)
 {
@@ -14,21 +16,10 @@ int validate_line(int index, int check_rows)
 
     for (int i = 0; i < 9; i++)
     {
-        int value;
-
-        if (check_rows)
-        {
-            value = sudoku[index][i];
-        }
-        else
-        {
-            value = sudoku[i][index];
-        }
+        int value = check_rows ? sudoku[index][i] : sudoku[i][index];
 
         if (value < 1 || value > 9 || seen[value])
-        {
             return 0;
-        }
 
         seen[value] = 1;
     }
@@ -39,12 +30,8 @@ int validate_line(int index, int check_rows)
 int validate_rows()
 {
     for (int i = 0; i < 9; i++)
-    {
         if (!validate_line(i, 1))
-        {
             return 0;
-        }
-    }
 
     return 1;
 }
@@ -52,12 +39,8 @@ int validate_rows()
 int validate_columns()
 {
     for (int i = 0; i < 9; i++)
-    {
         if (!validate_line(i, 0))
-        {
             return 0;
-        }
-    }
 
     return 1;
 }
@@ -66,16 +49,14 @@ int validate_subgrid(int start_row, int start_col)
 {
     int seen[10] = {0};
 
-    for (int row = start_row; row < start_row + 3; row++)
+    for (int r = start_row; r < start_row + 3; r++)
     {
-        for (int col = start_col; col < start_col + 3; col++)
+        for (int c = start_col; c < start_col + 3; c++)
         {
-            int value = sudoku[row][col];
+            int value = sudoku[r][c];
 
             if (value < 1 || value > 9 || seen[value])
-            {
                 return 0;
-            }
 
             seen[value] = 1;
         }
@@ -84,115 +65,82 @@ int validate_subgrid(int start_row, int start_col)
     return 1;
 }
 
+void* column_thread(void* arg)
+{
+    printf("Column thread TID: %ld\n", syscall(SYS_gettid));
+
+    validate_columns();
+
+    pthread_exit(0);
+}
+
 int main(int argc, char *argv[])
 {
-
     if (argc != 2)
     {
         printf("Uso: %s <archivo_sudoku>\n", argv[0]);
         return 1;
     }
 
-    printf("Archivo recibido: %s\n", argv[1]);
-
-    int file_descriptor = open(argv[1], O_RDONLY);
-
-    if (file_descriptor < 0)
+    int fd = open(argv[1], O_RDONLY);
+    if (fd < 0)
     {
-        perror("Error abriendo archivo");
+        perror("open");
         return 1;
     }
 
-    printf("Archivo abierto correctamente\n");
-
-    char *map = mmap(NULL, 81, PROT_READ, MAP_PRIVATE, file_descriptor, 0);
-
+    char *map = mmap(NULL, 81, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED)
     {
-        perror("Error en mmap");
+        perror("mmap");
         return 1;
     }
-
-    printf("Archivo mapeado en memoria\n");
 
     for (int i = 0; i < 81; i++)
     {
         int row = i / 9;
         int col = i % 9;
-
         sudoku[row][col] = map[i] - '0';
     }
 
-    printf("\nSudoku cargado:\n");
+    int sudoku_valid = 1;
 
-    for (int i = 0; i < 9; i++)
-    {
-        for (int j = 0; j < 9; j++)
-        {
-            printf("%d ", sudoku[i][j]);
-        }
-        printf("\n");
-    }
+    if (!validate_rows())
+        sudoku_valid = 0;
 
-    if (validate_rows())
-    {
-        printf("\nFilas válidas\n");
-    }
-    else
-    {
-        printf("\nError en filas\n");
-    }
+    if (!validate_columns())
+        sudoku_valid = 0;
 
-    if (validate_columns())
-    {
-        printf("Columnas válidas\n");
-    }
-    else
-    {
-        printf("Error en columnas\n");
-    }
+    for (int r = 0; r < 9; r += 3)
+        for (int c = 0; c < 9; c += 3)
+            if (!validate_subgrid(r, c))
+                sudoku_valid = 0;
 
-    int subgrid_valid = 1;
-
-    for (int row = 0; row < 9; row += 3)
-    {
-        for (int col = 0; col < 9; col += 3)
-        {
-            if (!validate_subgrid(row, col))
-            {
-                subgrid_valid = 0;
-            }
-        }
-    }
-
-    if (subgrid_valid)
-    {
-        printf("Subcuadros válidos\n");
-    }
-    else
-    {
-        printf("Error en subcuadros\n");
-    }
+    printf("Sudoku %s\n", sudoku_valid ? "valido" : "invalido");
 
     pid_t parent_pid = getpid();
-
-    printf("PID del proceso padre: %d\n", parent_pid);
-
     pid_t child_pid = fork();
 
     if (child_pid == 0)
     {
-        printf("Proceso hijo ejecutando ps...\n");
-
         char pid_str[20];
         sprintf(pid_str, "%d", parent_pid);
 
         execlp("ps", "ps", "-p", pid_str, "-lLf", NULL);
 
-        perror("Error ejecutando ps");
         exit(1);
     }
+    else
+    {
+        wait(NULL);
 
+        pthread_t thread_id;
+
+        pthread_create(&thread_id, NULL, column_thread, NULL);
+        pthread_join(thread_id, NULL);
+
+        printf("Main thread TID: %ld\n", syscall(SYS_gettid));
+    }
 
     return 0;
 }
