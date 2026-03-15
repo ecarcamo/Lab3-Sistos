@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 int sudoku[9][9];   // matriz global del sudoku
 
@@ -172,6 +173,26 @@ int main(int argc, char *argv[])
     {
         printf("Error en subcuadros\n");
     }
+
+    pid_t parent_pid = getpid();
+
+    printf("PID del proceso padre: %d\n", parent_pid);
+
+    pid_t child_pid = fork();
+
+    if (child_pid == 0)
+    {
+        printf("Proceso hijo ejecutando ps...\n");
+
+        char pid_str[20];
+        sprintf(pid_str, "%d", parent_pid);
+
+        execlp("ps", "ps", "-p", pid_str, "-lLf", NULL);
+
+        perror("Error ejecutando ps");
+        exit(1);
+    }
+
 
     return 0;
 }
