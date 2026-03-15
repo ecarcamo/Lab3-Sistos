@@ -1,0 +1,21 @@
+# Compiled Binaries
+SudokuValidator
+TestOMP
+
+# Object files
+*.o
+*.obj
+
+# Core dumps
+core
+core.*
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -28,5 +28,15 @@ int main(int argc, char *argv[])
 
     printf("Archivo abierto correctamente\n");
 
+    char *map = mmap(NULL, 81, PROT_READ, MAP_PRIVATE, file_descriptor, 0);
+
+    if (map == MAP_FAILED)
+    {
+        perror("Error en mmap");
+        return 1;
+    }
+
+    printf("Archivo mapeado en memoria\n");
+
     return 0;
 }
